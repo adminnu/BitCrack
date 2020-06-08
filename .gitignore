@@ -3,6 +3,13 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# These files are auto-generated during building and do
+# not need to be checked in
+CLKeySearchDevice/bitcrack.cl
+CLKeySearchDevice/bitcrack_cl.cpp
+CLUnitTests/test.cpp
+CLUnitTests/test.cl
+
 # Linux build results
 *.o
 
@@ -279,3 +286,5 @@ __pycache__/
 
 # Cake - Uncomment if you are using it
 # tools/
+
+TestData/

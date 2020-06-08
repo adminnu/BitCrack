@@ -14,7 +14,7 @@ static crypto::Rng _rng;
 
 static inline void addc(unsigned int a, unsigned int b, unsigned int carryIn, unsigned int &sum, int &carryOut)
 {
-	unsigned long long sum64 = (unsigned long long)a + b + carryIn;
+	uint64_t sum64 = (uint64_t)a + b + carryIn;
 
 	sum = (unsigned int)sum64;
 	carryOut = (int)(sum64 >> 32) & 1;
@@ -23,7 +23,7 @@ static inline void addc(unsigned int a, unsigned int b, unsigned int carryIn, un
 
 static inline void subc(unsigned int a, unsigned int b, unsigned int borrowIn, unsigned int &diff, int &borrowOut)
 {
-	unsigned long long diff64 = (unsigned long long)a - b - borrowIn;
+	uint64_t diff64 = (uint64_t)a - b - borrowIn;
 
 	diff = (unsigned int)diff64;
 	borrowOut = (int)((diff64 >> 32) & 1);
@@ -102,7 +102,7 @@ static void multiply(const unsigned int *x, int xLen, const unsigned int *y, int
 
 		for(j = 0; j < yLen; j++) {
 
-			unsigned long long product = (unsigned long long)x[i] * y[j];
+			uint64_t product = (uint64_t)x[i] * y[j];
 
 			// Take the existing sum and add it to the product plus the high word from the
 			// previous multiplication. Since we are adding to a larger datatype, the compiler
@@ -142,6 +142,19 @@ uint256 uint256::mul(const uint256 &x) const
 	return uint256(product);
 }
 
+uint256 uint256::mul(uint64_t i) const
+{
+    unsigned int product[16] = {0};
+    unsigned int x[2];
+
+    x[0] = (unsigned int)i;
+    x[1] = (unsigned int)(i >> 32);
+
+    multiply(x, 2, this->v, 8, product);
+
+    return uint256(product);
+}
+
 uint256 uint256::mul(int i) const
 {
 	unsigned int product[16] = { 0 };
@@ -151,28 +164,22 @@ uint256 uint256::mul(int i) const
 	return uint256(product);
 }
 
-uint256 uint256::div(int val) const
+uint256 uint256::mul(uint32_t i) const
 {
-	//uint256 sum;
+    unsigned int product[16] = {0};
 
-	//unsigned int mask = 0x80000000;
+    multiply((unsigned int *)&i, 1, this->v, 8, product);
 
-	//for(int i = 31; i >= 0; i--) {
-	//	if(val & mask) {
-	//		uint256 k = *this;
-	//		uint256 shifted = rightShift(k, i);
-	//		sum = sum.add(shifted);
-	//	}
-	//	mask >>= 1;
-	//}
+    return uint256(product);
+}
 
-	//return sum;
-
+uint256 uint256::div(uint32_t val) const
+{
 	uint256 t = *this;
 	uint256 quotient;
 
 	// Shift divisor left until MSB is 1
-	unsigned int kWords[8] = { 0 };
+	uint32_t kWords[8] = { 0 };
 	kWords[7] = val;
 
 	int shiftCount = 7 * 32;
@@ -201,7 +208,8 @@ uint256 uint256::div(int val) const
 	return quotient;
 }
 
-uint256 uint256::mod(int val) const
+
+uint256 uint256::mod(uint32_t val) const
 {
 	uint256 quotient = this->div(val);
 
@@ -232,7 +240,7 @@ uint256 uint256::add(unsigned int val) const
 	return result;
 }
 
-uint256 uint256::add(unsigned long long val) const
+uint256 uint256::add(uint64_t val) const
 {
 	uint256 result(val);
 
@@ -257,6 +265,15 @@ uint256 uint256::add(const uint256 &val) const
 	::add(this->v, val.v, result.v, 8);
 
 	return result;
+}
+
+uint256 uint256::sub(const uint256 &val) const
+{
+    uint256 result;
+
+    ::sub(this->v, val.v, result.v, 8);
+
+    return result;
 }
 
 static bool isOne(const uint256 &x)

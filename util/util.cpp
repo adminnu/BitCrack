@@ -3,6 +3,7 @@
 #include<fstream>
 #include<vector>
 #include<set>
+#include<algorithm>
 
 #include"util.h"
 
@@ -12,18 +13,19 @@
 #include<unistd.h>
 #include<sys/stat.h>
 #include<sys/time.h>
+#include<libgen.h>
 #endif
 
 namespace util {
 
-    unsigned int getSystemTime()
+    uint64_t getSystemTime()
     {
 #ifdef _WIN32
-        return GetTickCount();
+        return GetTickCount64();
 #else
         struct timeval t;
         gettimeofday(&t, NULL);
-        return t.tv_sec * 1000 + t.tv_usec / 1000;
+        return (uint64_t)t.tv_sec * 1000 + t.tv_usec / 1000;
 #endif
     }
 
@@ -37,7 +39,7 @@ namespace util {
         _startTime = getSystemTime();
     }
 
-    unsigned int Timer::getTime()
+    uint64_t Timer::getTime()
     {
         return getSystemTime() - _startTime;
     }
@@ -51,7 +53,7 @@ namespace util {
 #endif
     }
 
-	std::string formatThousands(unsigned long long x)
+	std::string formatThousands(uint64_t x)
 	{
 		char buf[32] = "";
 
@@ -83,14 +85,14 @@ namespace util {
 		return result;
 	}
 
-	unsigned int parseUInt32(std::string s)
+	uint32_t parseUInt32(std::string s)
 	{
-		return (unsigned int)parseUInt64(s);
+		return (uint32_t)parseUInt64(s);
 	}
 
-	unsigned long long parseUInt64(std::string s)
+	uint64_t parseUInt64(std::string s)
 	{
-		unsigned long long val = 0;
+		uint64_t val = 0;
 		bool isHex = false;
 
 		if(s[0] == '0' && s[1] == 'x') {
@@ -215,7 +217,7 @@ namespace util {
 		return true;
 	}
 
-	std::string format(const char *formatStr, double value)
+    std::string format(const char *formatStr, double value)
 	{
 		char buf[100] = { 0 };
 
@@ -224,7 +226,25 @@ namespace util {
 		return std::string(buf);
 	}
 
-	std::string format(unsigned int value)
+	std::string format(uint32_t value)
+	{
+		char buf[100] = { 0 };
+
+		sprintf(buf, "%u", value);
+
+		return std::string(buf);
+	}
+
+    std::string format(uint64_t value)
+	{
+		char buf[100] = { 0 };
+
+		sprintf(buf, "%lld", (uint64_t)value);
+
+		return std::string(buf);
+	}
+
+	std::string format(int value)
 	{
 		char buf[100] = { 0 };
 
@@ -233,12 +253,46 @@ namespace util {
 		return std::string(buf);
 	}
 
-	std::string format(unsigned long long value)
+	void removeNewline(std::string &s)
 	{
-		char buf[100] = { 0 };
+		size_t len = s.length();
 
-		sprintf(buf, "%lld", value);
+		int toRemove = 0;
 
-		return std::string(buf);
+		if(len >= 2) {
+			if(s[len - 2] == '\r' || s[len - 2] == '\n') {
+				toRemove++;
+			}
+		}
+		if(len >= 1) {
+			if(s[len - 1] == '\r' || s[len - 1] == '\n') {
+				toRemove++;
+			}
+		}
+
+		if(toRemove) {
+			s.erase(len - toRemove);
+		}
 	}
+
+    unsigned int endian(unsigned int x)
+    {
+        return (x << 24) | ((x << 8) & 0x00ff0000) | ((x >> 8) & 0x0000ff00) | (x >> 24);
+    }
+
+    std::string toLower(const std::string &s)
+    {
+        std::string lowerCase = s;
+        std::transform(lowerCase.begin(), lowerCase.end(), lowerCase.begin(), ::tolower);
+
+        return lowerCase;
+    }
+
+    std::string trim(const std::string &s, char c)
+    {
+        size_t left = s.find_first_not_of(c);
+        size_t right = s.find_last_not_of(c);
+
+        return s.substr(left, right - left + 1);
+    }
 }

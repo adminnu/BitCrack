@@ -2,6 +2,7 @@
 #define _HOST_SECP256K1_H
 
 #include<stdio.h>
+#include<stdint.h>
 #include<string.h>
 #include<string>
 #include<vector>
@@ -14,7 +15,7 @@ namespace secp256k1 {
 		static const int BigEndian = 1;
 		static const int LittleEndian = 2;
 
-		unsigned int v[8];
+        uint32_t v[8] = { 0 };
 
 		uint256()
 		{
@@ -32,7 +33,7 @@ namespace secp256k1 {
 
 			// 'h' suffix
 			if(t.length() >= 1 && t[t.length() - 1] == 'h') {
-				t = t.substr(0, t.length() - 2);
+				t = t.substr(0, t.length() - 1);
 			}
 			
 			if(t.length() == 0) {
@@ -56,12 +57,12 @@ namespace secp256k1 {
 
 			int len = (int)t.length();
 
-			memset(this->v, 0, sizeof(unsigned int) * 8);
+			memset(this->v, 0, sizeof(uint32_t) * 8);
 
 			int j = 0;
 			for(int i = len - 8; i >= 0; i-= 8) {
 				std::string sub = t.substr(i, 8);
-				unsigned int val;
+				uint32_t val;
 				if(sscanf(sub.c_str(), "%x", &val) != 1) {
 					throw std::string("Incorrect hex formatting");
 				}
@@ -76,7 +77,7 @@ namespace secp256k1 {
 			this->v[0] = x;
 		}
 
-		uint256(unsigned long long x)
+		uint256(uint64_t x)
 		{
 			memset(this->v, 0, sizeof(this->v));
 			this->v[0] = (unsigned int)x;
@@ -113,6 +114,36 @@ namespace secp256k1 {
 			return true;
 		}
 
+        uint256 operator+(const uint256 &x) const
+        {
+            return add(x);
+        }
+
+        uint256 operator+(uint32_t x) const
+        {
+            return add(x);
+        }
+
+        uint256 operator*(uint32_t x) const
+        {
+            return mul(x);
+        }
+
+        uint256 operator*(const uint256 &x) const
+        {
+            return mul(x);
+        }
+
+        uint256 operator*(uint64_t x) const
+        {
+            return mul(x);
+        }
+
+        uint256 operator-(const uint256 &x) const
+        {
+            return sub(x);
+        }
+
 		void exportWords(unsigned int *buf, int len, int endian = LittleEndian) const
 		{
 			if(endian == LittleEndian) {
@@ -130,19 +161,25 @@ namespace secp256k1 {
 
 		uint256 mul(int val) const;
 
+        uint256 mul(uint32_t val) const;
+
+        uint256 mul(uint64_t val) const;
+
 		uint256 add(int val) const;
 
 		uint256 add(unsigned int val) const;
 
-		uint256 add(unsigned long long val) const;
+		uint256 add(uint64_t val) const;
 
 		uint256 sub(int val) const;
 
+        uint256 sub(const uint256 &val) const;
+
 		uint256 add(const uint256 &val) const;
 
-		uint256 div(int val) const;
+		uint256 div(uint32_t val) const;
 
-		uint256 mod(int val) const;
+		uint256 mod(uint32_t val) const;
 
 		unsigned int toInt32() const
 		{
@@ -226,6 +263,10 @@ namespace secp256k1 {
 
 		std::string toString(int base = 16);
 
+        uint64_t toUint64()
+        {
+            return ((uint64_t)this->v[1] << 32) | v[0];
+        }
 	};
 
 	const unsigned int _POINT_AT_INFINITY_WORDS[8] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
@@ -316,8 +357,6 @@ namespace secp256k1 {
 
 	uint256 addModN(const uint256 &a, const uint256 &b);
 	uint256 subModN(const uint256 &a, const uint256 &b);
-
-	uint256 randInt();
 
 	uint256 generatePrivateKey();
 
